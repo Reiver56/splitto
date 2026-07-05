@@ -1,0 +1,29 @@
+# Environment / secrets
+.env
+vapid_private_key.pem
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+env/
+
+# Postgres local data (if persisted outside Docker volumes)
+pgdata/
+postgres-data/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Frontend build artifacts (not currently used, kept for safety)
+node_modules/
+dist/

@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Splitto - Bollette condivise</title>
+<meta name="theme-color" content="#5865F2">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/static/icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/static/icons/icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/desktop.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/game.css') }}">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+</head>
+<body>
+<div id="app">
+
+  <nav id="sidebar" class="sidebar hidden">
+    <div class="sidebar-brand">
+      <img src="/static/icons/icon.svg" alt="" class="sidebar-brand-icon">
+      Splitto
+    </div>
+    <button class="nav-link active" type="button" data-section="dashboard">
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+      </span>
+      <span>Dashboard</span>
+    </button>
+    <button class="nav-link" type="button" data-section="bollette">
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3z"/><path d="M9 8h6M9 12h6"/></svg>
+      </span>
+      <span>Bollette</span>
+    </button>
+    <button class="nav-link" type="button" data-section="storico">
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2"/><path d="M9 2h6"/></svg>
+      </span>
+      <span>Storico</span>
+    </button>
+    <button class="nav-link" type="button" data-section="statistiche">
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>
+      </span>
+      <span>Statistiche</span>
+    </button>
+    <button class="nav-link" type="button" data-section="gioco">
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="16" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="8" cy="16" r="1" fill="currentColor" stroke="none"/><circle cx="16" cy="16" r="1" fill="currentColor" stroke="none"/></svg>
+      </span>
+      <span>Gioco</span>
+    </button>
+    <div class="sidebar-footer">
+      <span id="current-user-avatar-desktop" class="avatar"></span>
+      <span id="current-user-name-desktop" class="sidebar-footer-name"></span>
+      <button id="switch-user-btn-desktop" class="link-btn" type="button">cambia</button>
+      <button id="theme-toggle-desktop" class="icon-btn" type="button" title="Cambia tema" aria-label="Cambia tema">&#9789;</button>
+    </div>
+  </nav>
+
+  <div class="app-shell">
+
+    <header class="app-header">
+      <h1>Splitto</h1>
+      <div id="current-user-badge" class="user-badge hidden">
+        <span id="current-user-avatar" class="avatar"></span>
+        <span id="current-user-name"></span>
+        <button id="switch-user-btn" class="link-btn" type="button">cambia</button>
+        <button id="theme-toggle" class="icon-btn" type="button" title="Cambia tema" aria-label="Cambia tema">&#9789;</button>
+      </div>
+    </header>
+
+    <main id="main-content">
+
+      <section id="setup-screen" class="screen hidden">
+        <h2>Configura i coinquilini</h2>
+        <p class="hint">Inserisci i nomi di chi condivide questa casa (2 o 3 persone). Questa operazione va fatta una sola volta.</p>
+        <form id="setup-form">
+          <div id="setup-name-inputs">
+            <input type="text" class="setup-name" placeholder="Nome 1" required>
+            <input type="text" class="setup-name" placeholder="Nome 2" required>
+          </div>
+          <button type="button" id="add-name-btn" class="secondary-btn">+ Aggiungi un altro coinquilino</button>
+          <button type="submit" class="primary-btn">Conferma</button>
+        </form>
+        <p id="setup-error" class="error-msg hidden"></p>
+      </section>
+
+      <section id="user-select-screen" class="screen hidden">
+        <h2>Chi sei?</h2>
+        <p class="hint">Seleziona il tuo nome per continuare su questo dispositivo. La scelta viene ricordata solo qui.</p>
+        <div id="user-select-list" class="user-select-list"></div>
+      </section>
+
+      <section id="section-dashboard" class="app-section hidden">
+        <div id="unclaimed-bills-box" class="card highlight hidden">
+          <h3>Da pagare</h3>
+          <p class="hint">Bollette registrate che nessuno ha ancora anticipato.</p>
+          <div id="unclaimed-bills-list" class="upcoming-bills-list"></div>
+        </div>
+
+        <div id="upcoming-bills-box" class="card hidden">
+          <h3>Scadenzario</h3>
+          <div id="upcoming-bills-list" class="upcoming-bills-list"></div>
+        </div>
+
+        <h2>Saldi</h2>
+        <div id="balances-list" class="balances-list"></div>
+
+        <div id="settlements-box" class="card hidden">
+          <h3>Trasferimenti suggeriti</h3>
+          <ul id="settlements-list" class="settlements-list"></ul>
+        </div>
+
+        <div class="section-header">
+          <h2>Bollette</h2>
+        </div>
+        <div id="bills-list" class="bills-list"></div>
+      </section>
+
+      <section id="section-bollette" class="app-section hidden">
+        <div class="section-header">
+          <h2>Tutte le bollette aperte</h2>
+        </div>
+        <div id="bollette-list" class="bills-list bills-grid"></div>
+      </section>
+
+      <section id="section-storico" class="app-section hidden">
+        <div class="section-header">
+          <h2>Storico</h2>
+        </div>
+
+        <div class="filters-bar card">
+          <label>Categoria
+            <select id="history-filter-category">
+              <option value="">Tutte</option>
+            </select>
+          </label>
+          <label>Coinquilino
+            <select id="history-filter-roommate">
+              <option value="">Tutti</option>
+            </select>
+          </label>
+          <label>Anno
+            <select id="history-filter-year">
+              <option value="">Tutti</option>
+            </select>
+          </label>
+          <label>Mese
+            <select id="history-filter-month">
+              <option value="">Tutti</option>
+              <option value="1">Gennaio</option>
+              <option value="2">Febbraio</option>
+              <option value="3">Marzo</option>
+              <option value="4">Aprile</option>
+              <option value="5">Maggio</option>
+              <option value="6">Giugno</option>
+              <option value="7">Luglio</option>
+              <option value="8">Agosto</option>
+              <option value="9">Settembre</option>
+              <option value="10">Ottobre</option>
+              <option value="11">Novembre</option>
+              <option value="12">Dicembre</option>
+            </select>
+          </label>
+          <label>Ordina per
+            <select id="history-sort">
+              <option value="date">Data</option>
+              <option value="amount">Importo</option>
+              <option value="category">Categoria</option>
+            </select>
+          </label>
+          <label>Ordine
+            <select id="history-order">
+              <option value="desc">Decrescente</option>
+              <option value="asc">Crescente</option>
+            </select>
+          </label>
+        </div>
+
+        <div id="history-table-wrap" class="table-wrap">
+          <table id="history-table" class="data-table">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Descrizione</th>
+                <th>Categoria</th>
+                <th>Importo</th>
+                <th>Pagato da</th>
+              </tr>
+            </thead>
+            <tbody id="history-table-body"></tbody>
+          </table>
+        </div>
+        <div id="history-cards-list" class="bills-list"></div>
+      </section>
+
+      <section id="section-statistiche" class="app-section hidden">
+        <div class="section-header">
+          <h2>Statistiche</h2>
+        </div>
+
+        <div class="tabs">
+          <button class="tab-btn active" type="button" data-tab="panoramica">Panoramica</button>
+          <button class="tab-btn" type="button" data-tab="previsioni">Previsioni</button>
+        </div>
+
+        <div id="stats-panoramica" class="tab-panel">
+          <div class="filters-bar card">
+            <label>Periodo
+              <select id="stats-period">
+                <option value="month">Ultimo mese</option>
+                <option value="3months">Ultimi 3 mesi</option>
+                <option value="year">Ultimo anno</option>
+                <option value="all" selected>Sempre</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="stat-cards" id="stat-cards"></div>
+
+          <div class="charts-grid">
+            <div class="card chart-card">
+              <h3>Spesa per categoria</h3>
+              <canvas id="chart-category"></canvas>
+            </div>
+            <div class="card chart-card">
+              <h3>Andamento mensile</h3>
+              <canvas id="chart-monthly"></canvas>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Confronto pagamenti</h3>
+            <div id="paid-comparison-list" class="balances-list"></div>
+          </div>
+        </div>
+
+        <div id="stats-previsioni" class="tab-panel hidden">
+          <p class="hint">Stima basata sullo storico delle bollette inserite, per categoria.</p>
+          <div id="predictions-list" class="predictions-list"></div>
+        </div>
+      </section>
+
+      <section id="section-gioco" class="app-section hidden">
+        <div class="section-header">
+          <h2>Gioco del giorno</h2>
+        </div>
+        <p class="hint">Un percorso al giorno, uguale per tutti i coinquilini. Collega le celle numerate in ordine, passando per ogni casella della griglia senza incrociare il percorso.</p>
+
+        <div id="game-status-box" class="card"></div>
+        <div id="game-container"></div>
+
+        <div class="card">
+          <div class="tabs">
+            <button class="tab-btn active" type="button" data-leaderboard="today">Oggi</button>
+            <button class="tab-btn" type="button" data-leaderboard="week">Settimana</button>
+            <button class="tab-btn" type="button" data-leaderboard="alltime">Sempre</button>
+          </div>
+          <div id="leaderboard-list" class="leaderboard-list"></div>
+        </div>
+      </section>
+
+    </main>
+
+    <nav id="bottom-tabbar" class="bottom-tabbar hidden">
+      <button class="tab-item active" type="button" data-section="dashboard">
+        <span class="tab-icon">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+        </span>
+        <span>Home</span>
+      </button>
+      <button class="tab-item" type="button" data-section="bollette">
+        <span class="tab-icon">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3z"/><path d="M9 8h6M9 12h6"/></svg>
+        </span>
+        <span>Bollette</span>
+      </button>
+      <button class="tab-item" type="button" data-section="storico">
+        <span class="tab-icon">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2"/><path d="M9 2h6"/></svg>
+        </span>
+        <span>Storico</span>
+      </button>
+      <button class="tab-item" type="button" data-section="statistiche">
+        <span class="tab-icon">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>
+        </span>
+        <span>Stats</span>
+      </button>
+      <button class="tab-item" type="button" data-section="gioco">
+        <span class="tab-icon">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="16" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="8" cy="16" r="1" fill="currentColor" stroke="none"/><circle cx="16" cy="16" r="1" fill="currentColor" stroke="none"/></svg>
+        </span>
+        <span>Gioco</span>
+      </button>
+    </nav>
+
+  </div>
+
+  <button id="add-bill-btn" class="fab hidden" type="button" aria-label="Aggiungi bolletta">+</button>
+
+  <div id="add-bill-modal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Nuova bolletta</h2>
+        <button id="close-modal-btn" class="icon-btn" type="button" aria-label="Chiudi">&times;</button>
+      </div>
+      <form id="add-bill-form" novalidate>
+        <div class="form-section">
+          <span class="form-section-title">Dettagli bolletta</span>
+
+          <label>Descrizione
+            <input type="text" id="bill-description" required>
+          </label>
+          <span class="field-error hidden" id="error-description">La descrizione e' obbligatoria.</span>
+
+          <label>Categoria</label>
+          <div id="category-picker" class="category-picker"></div>
+          <div id="custom-category-wrap" class="hidden">
+            <label>Nuova categoria
+              <input type="text" id="bill-category-custom" placeholder="es. condominio">
+            </label>
+          </div>
+
+          <div class="form-row">
+            <label>Importo totale (EUR)
+              <input type="number" id="bill-amount" step="0.01" min="0.01" required>
+            </label>
+            <label>Scadenza
+              <input type="date" id="bill-due-date">
+            </label>
+          </div>
+          <span class="field-error hidden" id="error-amount">Inserisci un importo maggiore di zero.</span>
+
+          <label>Note (opzionale)
+            <textarea id="bill-notes" rows="2"></textarea>
+          </label>
+        </div>
+
+        <div class="form-section">
+          <span class="form-section-title">Chi paga</span>
+
+          <label class="checkbox-label">
+            <input type="checkbox" id="bill-historical">
+            Bolletta passata, gia' saldata (per ricostruire lo storico)
+          </label>
+
+          <label>Pagato da
+            <select id="bill-paid-by">
+              <option value="">Nessuno ancora (da pagare)</option>
+            </select>
+          </label>
+
+          <div id="recurring-wrap">
+            <label class="checkbox-label">
+              <input type="checkbox" id="bill-recurring">
+              Bolletta ricorrente
+            </label>
+            <div id="recurring-frequency-wrap" class="hidden">
+              <label>Frequenza
+                <select id="bill-recurrence-frequency">
+                  <option value="monthly">Mensile</option>
+                  <option value="bimonthly">Bimestrale</option>
+                  <option value="yearly">Annuale</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <fieldset id="participants-fieldset">
+            <legend>Partecipanti alla spesa</legend>
+            <div id="participants-list" class="participants-list"></div>
+            <button type="button" id="split-equally-btn" class="secondary-btn">Dividi in parti uguali tra i selezionati</button>
+            <div class="split-summary" id="split-summary"></div>
+            <span class="field-error hidden" id="error-participants">Seleziona almeno un partecipante e indica un importo per ciascuno.</span>
+          </fieldset>
+        </div>
+
+        <p id="bill-error" class="error-msg hidden"></p>
+        <button type="submit" class="primary-btn">Salva bolletta</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="claim-bill-modal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Segna come pagata</h2>
+        <button id="close-claim-modal-btn" class="icon-btn" type="button" aria-label="Chiudi">&times;</button>
+      </div>
+      <form id="claim-bill-form" novalidate>
+        <p id="claim-bill-summary" class="hint"></p>
+
+        <label>Pagato da
+          <select id="claim-paid-by"></select>
+        </label>
+
+        <fieldset>
+          <legend>Partecipanti alla spesa</legend>
+          <div id="claim-participants-list" class="participants-list"></div>
+          <button type="button" id="claim-split-equally-btn" class="secondary-btn">Dividi in parti uguali tra i selezionati</button>
+          <div class="split-summary" id="claim-split-summary"></div>
+        </fieldset>
+
+        <p id="claim-bill-error" class="error-msg hidden"></p>
+        <button type="submit" class="primary-btn">Conferma pagamento</button>
+      </form>
+    </div>
+  </div>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+<script src="{{ url_for('static', filename='js/history.js') }}"></script>
+<script src="{{ url_for('static', filename='js/statistics.js') }}"></script>
+<script src="{{ url_for('static', filename='js/game.js') }}"></script>
+</body>
+</html>

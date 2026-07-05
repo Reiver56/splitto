@@ -1,0 +1,16 @@
+{
+  "name": "Splitto - Bollette condivise",
+  "short_name": "Splitto",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1e1f22",
+  "theme_color": "#5865F2",
+  "icons": [
+    {
+      "src": "/static/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
